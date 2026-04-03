@@ -74,18 +74,88 @@ def get_monthly_miles(access_token, after_timestamp):
     return round(total_meters / METERS_PER_MILE, 1)
 
 
-def write_strava_yml(yearly_miles, monthly_miles, year, month, last_updated):
+def get_weekly_miles(access_token, num_weeks=8):
+    """Fetch per-week run miles for the last num_weeks weeks (rolling window)."""
+    from datetime import timedelta
+
+    now_utc = datetime.now(timezone.utc)
+
+    # Find the most recent Monday (start of current ISO week)
+    days_since_monday = now_utc.weekday()  # Monday=0, Sunday=6
+    current_week_start = (now_utc - timedelta(days=days_since_monday)).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+
+    # Build list of week-start datetimes, oldest first
+    week_starts = [
+        current_week_start - timedelta(weeks=i)
+        for i in range(num_weeks - 1, -1, -1)
+    ]
+
+    # Fetch all activities since the oldest week start
+    after_timestamp = int(week_starts[0].timestamp())
+    all_activities = []
+    page = 1
+    while True:
+        params = urllib.parse.urlencode({
+            "after": after_timestamp,
+            "per_page": 200,
+            "page": page,
+        })
+        url = f"https://www.strava.com/api/v3/athlete/activities?{params}"
+        req = urllib.request.Request(url, headers={"Authorization": f"Bearer {access_token}"})
+        with urllib.request.urlopen(req) as resp:
+            activities = json.loads(resp.read())
+        if not isinstance(activities, list):
+            raise ValueError(f"Expected list from activities endpoint, got: {type(activities).__name__}")
+        if not activities:
+            break
+        all_activities.extend(activities)
+        if len(activities) < 200:
+            break
+        page += 1
+
+    # Bucket runs into weeks
+    from datetime import timedelta
+    weekly = []
+    for week_start in week_starts:
+        week_end = week_start + timedelta(weeks=1)
+        label = week_start.strftime("%-m/%-d")  # e.g. "3/3"
+        total_meters = 0.0
+        for activity in all_activities:
+            if activity.get("type") != "Run":
+                continue
+            start_date = activity.get("start_date", "")
+            try:
+                act_dt = datetime.strptime(start_date, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+            except (ValueError, TypeError):
+                continue
+            if week_start <= act_dt < week_end:
+                total_meters += activity.get("distance", 0.0)
+        weekly.append({
+            "label": label,
+            "miles": round(total_meters / METERS_PER_MILE, 1),
+        })
+
+    return weekly
+
+
+def write_strava_yml(yearly_miles, monthly_miles, year, month, last_updated, weekly_miles):
     path = os.path.join(os.path.dirname(__file__), "..", "_data", "strava.yml")
     path = os.path.normpath(path)
-    content = (
-        f"yearly_miles: {yearly_miles}\n"
-        f"monthly_miles: {monthly_miles}\n"
-        f"year: {year}\n"
-        f"month: {month}\n"
-        f"last_updated: \"{last_updated}\"\n"
-    )
+    lines = [
+        f"yearly_miles: {yearly_miles}\n",
+        f"monthly_miles: {monthly_miles}\n",
+        f"year: {year}\n",
+        f"month: {month}\n",
+        f"last_updated: \"{last_updated}\"\n",
+        "weekly_miles:\n",
+    ]
+    for week in weekly_miles:
+        lines.append(f"  - label: \"{week['label']}\"\n")
+        lines.append(f"    miles: {week['miles']}\n")
     with open(path, "w") as f:
-        f.write(content)
+        f.writelines(lines)
 
 
 def main():
@@ -100,6 +170,7 @@ def main():
 
     yearly_miles = 0.0
     monthly_miles = 0.0
+    weekly_miles = []
 
     try:
         client_id = get_env("STRAVA_CLIENT_ID")
@@ -110,13 +181,14 @@ def main():
         athlete_id = get_athlete_id(access_token)
         yearly_miles = get_yearly_miles(access_token, athlete_id)
         monthly_miles = get_monthly_miles(access_token, after_timestamp)
+        weekly_miles = get_weekly_miles(access_token)
     except Exception as e:
         # Sanitize: print error class and limited message, not full repr which may include tokens
         print(f"Error fetching Strava data ({type(e).__name__}). Check credentials and API status.")
         import sys
         print(f"Details: {e}", file=sys.stderr)
 
-    write_strava_yml(yearly_miles, monthly_miles, year, month_name, last_updated)
+    write_strava_yml(yearly_miles, monthly_miles, year, month_name, last_updated, weekly_miles)
     print(f"Wrote _data/strava.yml: {yearly_miles} yearly miles, {monthly_miles} monthly miles")
 
 

@@ -31,6 +31,75 @@ layout: default
       <div class="strava-stat-label">Miles in {{ site.data.strava.month }}</div>
     </div>
   </div>
+
+  {% if site.data.strava.weekly_miles %}
+  <div class="strava-chart-container">
+    <canvas id="weeklyMilesChart" height="120"></canvas>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>
+    (function() {
+      var labels = [{% for week in site.data.strava.weekly_miles %}"{{ week.label }}"{% unless forloop.last %},{% endunless %}{% endfor %}];
+      var data   = [{% for week in site.data.strava.weekly_miles %}{{ week.miles }}{% unless forloop.last %},{% endunless %}{% endfor %}];
+
+      var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var gridColor   = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+      var labelColor  = isDark ? '#8b949e' : '#828282';
+      var tooltipBg   = isDark ? '#161b22' : '#ffffff';
+      var tooltipText = isDark ? '#c9d1d9' : '#333333';
+
+      new Chart(document.getElementById('weeklyMilesChart'), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Miles',
+            data: data,
+            borderColor: '#fc4c02',
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            pointBackgroundColor: '#fc4c02',
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            tension: 0.3,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: tooltipBg,
+              titleColor: tooltipText,
+              bodyColor: tooltipText,
+              borderColor: isDark ? '#30363d' : '#e0e0e0',
+              borderWidth: 1,
+              callbacks: {
+                label: function(ctx) { return ctx.parsed.y + ' mi'; }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: gridColor },
+              ticks: { color: labelColor, font: { size: 11 } }
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: gridColor },
+              ticks: {
+                color: labelColor,
+                font: { size: 11 },
+                callback: function(v) { return v + ' mi'; }
+              }
+            }
+          }
+        }
+      });
+    })();
+  </script>
+  {% endif %}
   {% endif %}
 </section>
 
