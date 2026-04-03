@@ -1,0 +1,36 @@
+title: Justin Grove
+description: >-
+  Sr. Software Engineer
+baseurl: ""
+url: "https://jgrove2.github.io"
+github_username: jgrove2
+linkedin_username: jgrove2
+
+# Blog post URLs
+permalink: /:year/:month/:title/
+
+# Build settings
+theme: jekyll-theme-minimal
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+
+# Exclude from processing
+exclude:
+  - .sass-cache/
+  - .jekyll-cache/
+  - gemfiles/
+  - Gemfile
+  - Gemfile.lock
+  - node_modules/
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+
+# Suppress upstream Sass deprecation warnings from jekyll-theme-minimal gem
+sass:
+  silence_deprecations:
+    - import
+    - global-builtin
+    - color-functions

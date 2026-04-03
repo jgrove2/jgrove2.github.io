@@ -1,0 +1,12 @@
+- name: jgrove2.github.io
+  description: Personal site and blog built with Jekyll and hosted on GitHub Pages.
+  url: https://github.com/jgrove2/jgrove2.github.io
+  tags:
+    - Jekyll
+    - GitHub Pages
+
+- name: Placeholder Project
+  description: Add your highlighted projects here by editing _data/projects.yml.
+  url:
+  tags:
+    - Example

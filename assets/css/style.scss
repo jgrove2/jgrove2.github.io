@@ -1,0 +1,292 @@
+---
+---
+
+@import "{{ site.theme }}";
+
+/* =====================
+   HOME PAGE (full-width, no sidebar)
+   ===================== */
+
+/* Reset the theme's body padding and kill scrollbar on home page */
+html:has(body.home-page),
+body.home-page {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100%;
+}
+
+.home-page {
+  background: #fff;
+}
+
+.home-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 2rem;
+}
+
+.home-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 30rem;
+  width: 100%;
+}
+
+.home-avatar {
+  width: 11.25rem;
+  height: 11.25rem;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 1.5rem;
+  border: 0.1875rem solid #e8e8e8;
+}
+
+.home-name {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin: 0 0 0.4rem;
+  color: #222;
+}
+
+.home-title {
+  font-size: 1.15rem;
+  color: #828282;
+  margin: 0 0 1.75rem;
+}
+
+/* Home link buttons */
+.home-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.home-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1.1rem;
+  border: 0.0625rem solid #d0d0d0;
+  border-radius: 0.375rem;
+  font-size: 0.9rem;
+  color: #333;
+  text-decoration: none;
+  transition: border-color 0.2s, color 0.2s, background-color 0.2s;
+
+  &:hover {
+    border-color: #0366d6;
+    color: #0366d6;
+    background-color: #f0f7ff;
+    text-decoration: none;
+  }
+}
+
+.home-link-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+/* =====================
+   SIDEBAR (default layout — all non-home pages)
+   ===================== */
+
+.sidebar-avatar-link {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.sidebar-avatar {
+  width: 7.5rem;
+  height: 7.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 0.1875rem solid #e8e8e8;
+  display: block;
+}
+
+.sidebar-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0 0 0.3rem;
+
+  a {
+    color: inherit;
+    text-decoration: none;
+    &:hover { text-decoration: underline; }
+  }
+}
+
+.sidebar-title {
+  font-size: 0.9rem;
+  color: #828282;
+  margin: 0 0 1.25rem;
+}
+
+/* Sidebar nav */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 1.25rem;
+}
+
+.sidebar-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: #555;
+  text-decoration: none;
+  padding: 0.25rem 0;
+
+  &:hover {
+    color: #0366d6;
+    text-decoration: none;
+  }
+
+  &.active {
+    color: #0366d6;
+    font-weight: 600;
+  }
+}
+
+.sidebar-nav-icon {
+  width: 0.9375rem;
+  height: 0.9375rem;
+  flex-shrink: 0;
+}
+
+/* Sidebar social links */
+.sidebar-social {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.sidebar-social-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: #555;
+  text-decoration: none;
+  padding: 0.25rem 0;
+
+  &:hover {
+    color: #0366d6;
+    text-decoration: none;
+  }
+}
+
+.sidebar-social-icon {
+  width: 0.9375rem;
+  height: 0.9375rem;
+  flex-shrink: 0;
+}
+
+/* =====================
+   STATS PAGE
+   ===================== */
+
+.stats-page-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+}
+
+.stats-section {
+  margin-bottom: 3rem;
+}
+
+.stats-section-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e8e8e8;
+}
+
+.github-chart-container {
+  overflow-x: auto;
+}
+
+.github-chart {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.strava-embed-placeholder {
+  padding: 2rem;
+  border: 2px dashed #d0d0d0;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.placeholder-text {
+  color: #828282;
+  margin: 0;
+  font-style: italic;
+}
+
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16.25rem, 1fr));
+  gap: 1.25rem;
+}
+
+.project-card {
+  padding: 1.25rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  transition: box-shadow 0.2s;
+
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+}
+
+.project-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+
+  a {
+    text-decoration: none;
+    &:hover { text-decoration: underline; }
+  }
+}
+
+.project-description {
+  font-size: 0.9rem;
+  color: #555;
+  margin: 0 0 0.75rem;
+  line-height: 1.5;
+}
+
+.project-tags {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.project-tag {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.55rem;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  color: #555;
+}

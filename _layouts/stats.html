@@ -1,0 +1,54 @@
+---
+layout: default
+---
+
+<h1 class="stats-page-title">Stats</h1>
+
+<!-- GitHub Contributions -->
+<section class="stats-section">
+  <h2 class="stats-section-title">GitHub Contributions</h2>
+  <div class="github-chart-container">
+    <img
+      src="https://ghchart.rshah.org/{{ site.github_username | escape }}"
+      alt="GitHub contribution chart for {{ site.github_username | escape }}"
+      class="github-chart"
+      loading="lazy"
+    />
+  </div>
+</section>
+
+<!-- Strava -->
+<section class="stats-section">
+  <h2 class="stats-section-title">Running</h2>
+  <div class="strava-embed-placeholder">
+    <iframe height='160' width='300' frameborder='0' allowtransparency='true' scrolling='no' src='https://www.strava.com/athletes/16645619/activity-summary/80cd02a2c636333f355595cf6dd0f994eae4729c'></iframe>
+  </div>
+</section>
+
+<!-- Highlighted Projects -->
+{% if site.data.projects %}
+<section class="stats-section">
+  <h2 class="stats-section-title">Projects</h2>
+  <div class="projects-grid">
+    {% for project in site.data.projects %}
+    <div class="project-card">
+      <h3 class="project-title">
+        {% if project.url %}
+        <a href="{{ project.url }}" target="_blank" rel="noopener noreferrer">{{ project.name | escape }}</a>
+        {% else %}
+        {{ project.name | escape }}
+        {% endif %}
+      </h3>
+      <p class="project-description">{{ project.description | escape }}</p>
+      {% if project.tags %}
+      <ul class="project-tags">
+        {% for tag in project.tags %}
+        <li class="project-tag">{{ tag | escape }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
