@@ -31,8 +31,16 @@ def get_access_token(client_id, client_secret, refresh_token):
         return json.loads(resp.read())["access_token"]
 
 
-def get_yearly_miles(access_token):
-    url = "https://www.strava.com/api/v3/athlete/stats"
+def get_athlete_id(access_token):
+    url = "https://www.strava.com/api/v3/athlete"
+    req = urllib.request.Request(url, headers={"Authorization": f"Bearer {access_token}"})
+    with urllib.request.urlopen(req) as resp:
+        data = json.loads(resp.read())
+    return data["id"]
+
+
+def get_yearly_miles(access_token, athlete_id):
+    url = f"https://www.strava.com/api/v3/athletes/{athlete_id}/stats"
     req = urllib.request.Request(url, headers={"Authorization": f"Bearer {access_token}"})
     with urllib.request.urlopen(req) as resp:
         data = json.loads(resp.read())
@@ -99,7 +107,8 @@ def main():
         refresh_token = get_env("STRAVA_REFRESH_TOKEN")
 
         access_token = get_access_token(client_id, client_secret, refresh_token)
-        yearly_miles = get_yearly_miles(access_token)
+        athlete_id = get_athlete_id(access_token)
+        yearly_miles = get_yearly_miles(access_token, athlete_id)
         monthly_miles = get_monthly_miles(access_token, after_timestamp)
     except Exception as e:
         # Sanitize: print error class and limited message, not full repr which may include tokens
