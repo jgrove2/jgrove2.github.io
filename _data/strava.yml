@@ -1,22 +1,7 @@
 yearly_miles: 0.0
 monthly_miles: 0.0
+recent_miles: 0.0
 year: 2026
 month: April
 last_updated: "1970-01-01T00:00:00Z"
-weekly_miles:
-  - label: "2/3"
-    miles: 0.0
-  - label: "2/10"
-    miles: 0.0
-  - label: "2/17"
-    miles: 0.0
-  - label: "2/24"
-    miles: 0.0
-  - label: "3/3"
-    miles: 0.0
-  - label: "3/10"
-    miles: 0.0
-  - label: "3/17"
-    miles: 0.0
-  - label: "3/24"
-    miles: 0.0
+history:
