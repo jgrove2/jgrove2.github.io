@@ -1,9 +1,9 @@
-yearly_miles: 78.2
+yearly_miles: 82.2
 monthly_miles: 0.0
-recent_miles: 61.4
+recent_miles: 65.5
 year: 2026
 month: April
-last_updated: "2026-04-07T05:37:25Z"
+last_updated: "2026-04-08T05:37:39Z"
 history:
   - date: "2026-04-03"
     rolling_28d_miles: 66.0
@@ -15,3 +15,5 @@ history:
     rolling_28d_miles: 65.4
   - date: "2026-04-07"
     rolling_28d_miles: 61.4
+  - date: "2026-04-08"
+    rolling_28d_miles: 65.5
