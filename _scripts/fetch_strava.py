@@ -189,7 +189,22 @@ def compute_weekly_history(daily_snapshots, num_weeks=13):
         week_miles = round(max(end_ytd - start_ytd, 0.0), 1)
         weekly.append({"week_start": monday.strftime("%Y-%m-%d"), "miles": week_miles})
 
-    return weekly
+    # Backfill any missing leading weeks with 0.0 so we always return num_weeks entries
+    today = datetime.now(timezone.utc).date()
+    days_since_monday = today.weekday()
+    current_week_monday = today - timedelta(days=days_since_monday)
+    all_mondays = [current_week_monday - timedelta(weeks=i) for i in range(num_weeks - 1, -1, -1)]
+
+    computed_starts = {entry["week_start"] for entry in weekly}
+    full_weekly = []
+    for monday in all_mondays:
+        key = monday.strftime("%Y-%m-%d")
+        if key in computed_starts:
+            full_weekly.append(next(e for e in weekly if e["week_start"] == key))
+        else:
+            full_weekly.append({"week_start": key, "miles": 0.0})
+
+    return full_weekly
 
 
 def write_strava_yml(yearly_miles, recent_miles, year, month, last_updated, daily_snapshots, weekly_history):

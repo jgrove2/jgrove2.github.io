@@ -32,8 +32,6 @@ layout: default
     </div>
   </div>
 
-  {% assign weekly_size = site.data.strava.weekly_history | size %}
-  {% if weekly_size >= 1 %}
   <div class="strava-chart-container">
     <canvas id="weeklyMilesChart" height="120"></canvas>
   </div>
@@ -101,7 +99,6 @@ layout: default
     });
   })();
   </script>
-  {% endif %}
   {% endif %}
 </section>
 
