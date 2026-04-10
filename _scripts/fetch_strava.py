@@ -7,7 +7,7 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 METERS_PER_MILE = 1609.344
 
@@ -50,79 +50,167 @@ def get_yearly_miles(access_token, athlete_id):
     return round(yearly_meters / METERS_PER_MILE, 1), round(recent_meters / METERS_PER_MILE, 1)
 
 
-def load_history_from_file(path):
-    """Read existing strava.yml and return the history list as a list of dicts."""
-    history = []
+def load_yml_lists(path):
+    """Read existing strava.yml and return (daily_snapshots, weekly_history) as lists of dicts."""
+    daily_snapshots = []
+    weekly_history = []
+
     if not os.path.exists(path):
-        return history
+        return daily_snapshots, weekly_history
     try:
         with open(path, "r") as f:
             lines = f.readlines()
     except OSError:
-        return history
+        return daily_snapshots, weekly_history
 
-    in_history = False
+    mode = None  # None, "daily", or "weekly"
     current_entry = {}
+
     for line in lines:
         stripped = line.rstrip()
-        if stripped == "history:":
-            in_history = True
+
+        if stripped == "daily_snapshots:":
+            if current_entry:
+                if mode == "daily" and "date" in current_entry and "ytd_miles" in current_entry:
+                    daily_snapshots.append(current_entry)
+                elif mode == "weekly" and "week_start" in current_entry and "miles" in current_entry:
+                    weekly_history.append(current_entry)
+                current_entry = {}
+            mode = "daily"
             continue
-        if in_history:
-            # A new top-level key (not indented) ends the history block
-            if stripped and not stripped.startswith(" "):
-                break
-            # List item start: "  - date: ..."
+
+        if stripped == "weekly_history:":
+            if current_entry:
+                if mode == "daily" and "date" in current_entry and "ytd_miles" in current_entry:
+                    daily_snapshots.append(current_entry)
+                elif mode == "weekly" and "week_start" in current_entry and "miles" in current_entry:
+                    weekly_history.append(current_entry)
+                current_entry = {}
+            mode = "weekly"
+            continue
+
+        if mode is None:
+            continue
+
+        # A non-indented non-empty line ends the current block
+        if stripped and not stripped.startswith(" "):
+            if current_entry:
+                if mode == "daily" and "date" in current_entry and "ytd_miles" in current_entry:
+                    daily_snapshots.append(current_entry)
+                elif mode == "weekly" and "week_start" in current_entry and "miles" in current_entry:
+                    weekly_history.append(current_entry)
+                current_entry = {}
+            mode = None
+            continue
+
+        if mode == "daily":
             if stripped.startswith("  - date:"):
-                if current_entry:
-                    history.append(current_entry)
+                if current_entry and "date" in current_entry and "ytd_miles" in current_entry:
+                    daily_snapshots.append(current_entry)
                 date_val = stripped.split(":", 1)[1].strip().strip('"')
                 current_entry = {"date": date_val}
-            elif stripped.startswith("    rolling_28d_miles:"):
+            elif stripped.startswith("    ytd_miles:"):
                 val_str = stripped.split(":", 1)[1].strip()
                 try:
-                    current_entry["rolling_28d_miles"] = float(val_str)
+                    current_entry["ytd_miles"] = float(val_str)
                 except ValueError:
-                    current_entry["rolling_28d_miles"] = 0.0
+                    current_entry["ytd_miles"] = 0.0
+
+        elif mode == "weekly":
+            if stripped.startswith("  - week_start:"):
+                if current_entry and "week_start" in current_entry and "miles" in current_entry:
+                    weekly_history.append(current_entry)
+                date_val = stripped.split(":", 1)[1].strip().strip('"')
+                current_entry = {"week_start": date_val}
+            elif stripped.startswith("    miles:"):
+                val_str = stripped.split(":", 1)[1].strip()
+                try:
+                    current_entry["miles"] = float(val_str)
+                except ValueError:
+                    current_entry["miles"] = 0.0
+
+    # Flush any trailing entry
     if current_entry:
-        history.append(current_entry)
-    return history
+        if mode == "daily" and "date" in current_entry and "ytd_miles" in current_entry:
+            daily_snapshots.append(current_entry)
+        elif mode == "weekly" and "week_start" in current_entry and "miles" in current_entry:
+            weekly_history.append(current_entry)
+
+    return daily_snapshots, weekly_history
 
 
-def write_strava_yml(yearly_miles, monthly_miles, recent_miles, year, month, last_updated):
-    path = os.path.join(os.path.dirname(__file__), "..", "_data", "strava.yml")
-    path = os.path.normpath(path)
+def compute_weekly_history(daily_snapshots, num_weeks=13):
+    """Derive per-week miles from daily YTD snapshots."""
+    snapshot_by_date = {
+        entry["date"]: entry["ytd_miles"]
+        for entry in daily_snapshots
+        if "date" in entry and "ytd_miles" in entry
+    }
 
-    # Load existing history from the file
-    existing_history = load_history_from_file(path)
+    today = datetime.now(timezone.utc).date()
 
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    days_since_monday = today.weekday()  # Monday=0
+    current_week_monday = today - timedelta(days=days_since_monday)
 
-    # Check if today's entry already exists; update or append
-    found = False
-    for entry in existing_history:
-        if entry.get("date") == today:
-            entry["rolling_28d_miles"] = recent_miles
-            found = True
-            break
-    if not found:
-        existing_history.append({"date": today, "rolling_28d_miles": recent_miles})
+    mondays = [current_week_monday - timedelta(weeks=i) for i in range(num_weeks - 1, -1, -1)]
 
-    # Cap to most recent 90 entries
-    existing_history = existing_history[-90:]
+    weekly = []
+    for monday in mondays:
+        week_end = monday + timedelta(days=6)  # Sunday
+        end_date = min(week_end, today)  # current week may be incomplete
+
+        # Find end_ytd: look up end_date, scan backwards up to 6 days if missing
+        end_ytd = None
+        for delta in range(7):
+            candidate = (end_date - timedelta(days=delta)).strftime("%Y-%m-%d")
+            if candidate in snapshot_by_date:
+                # Don't go before monday
+                if (end_date - timedelta(days=delta)) >= monday:
+                    end_ytd = snapshot_by_date[candidate]
+                    break
+        if end_ytd is None:
+            continue
+
+        # Find start_ytd: the YTD for the day before monday
+        day_before_monday = monday - timedelta(days=1)
+        start_ytd = None
+        for delta in range(7):
+            candidate = (day_before_monday - timedelta(days=delta)).strftime("%Y-%m-%d")
+            if candidate in snapshot_by_date:
+                start_ytd = snapshot_by_date[candidate]
+                break
+        if start_ytd is None:
+            # New year boundary: if day before monday is prior year, start at 0.0
+            if monday.year != day_before_monday.year:
+                start_ytd = 0.0
+            else:
+                continue
+
+        week_miles = round(max(end_ytd - start_ytd, 0.0), 1)
+        weekly.append({"week_start": monday.strftime("%Y-%m-%d"), "miles": week_miles})
+
+    return weekly
+
+
+def write_strava_yml(yearly_miles, recent_miles, year, month, last_updated, daily_snapshots, weekly_history):
+    path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "_data", "strava.yml"))
 
     lines = [
         f"yearly_miles: {yearly_miles}\n",
-        f"monthly_miles: {monthly_miles}\n",
         f"recent_miles: {recent_miles}\n",
         f"year: {year}\n",
         f"month: {month}\n",
         f"last_updated: \"{last_updated}\"\n",
-        "history:\n",
+        "daily_snapshots:\n",
     ]
-    for entry in existing_history:
+    for entry in daily_snapshots:
         lines.append(f"  - date: \"{entry['date']}\"\n")
-        lines.append(f"    rolling_28d_miles: {entry['rolling_28d_miles']}\n")
+        lines.append(f"    ytd_miles: {entry['ytd_miles']}\n")
+    lines.append("weekly_history:\n")
+    for entry in weekly_history:
+        lines.append(f"  - week_start: \"{entry['week_start']}\"\n")
+        lines.append(f"    miles: {entry['miles']}\n")
+
     with open(path, "w") as f:
         f.writelines(lines)
 
@@ -132,12 +220,16 @@ def main():
     year = now_utc.year
     month_name = now_utc.strftime("%B")
     last_updated = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+    today_str = now_utc.strftime("%Y-%m-%d")
 
     yearly_miles = 0.0
-    # monthly_miles always 0.0 — /athlete/activities requires activity:read scope not available
-    monthly_miles = 0.0
     recent_miles = 0.0
 
+    # Load existing data from file
+    yml_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "_data", "strava.yml"))
+    daily_snapshots, _ = load_yml_lists(yml_path)
+
+    api_success = False
     try:
         client_id = get_env("STRAVA_CLIENT_ID")
         client_secret = get_env("STRAVA_CLIENT_SECRET")
@@ -146,13 +238,29 @@ def main():
         access_token = get_access_token(client_id, client_secret, refresh_token)
         athlete_id = get_athlete_id(access_token)
         yearly_miles, recent_miles = get_yearly_miles(access_token, athlete_id)
+        api_success = True
     except Exception as e:
-        # Sanitize: print error class and limited message, not full repr which may include tokens
         print(f"Error fetching Strava data ({type(e).__name__}). Check credentials and API status.")
         print(f"Details: {e}", file=sys.stderr)
 
-    write_strava_yml(yearly_miles, monthly_miles, recent_miles, year, month_name, last_updated)
-    print(f"Wrote _data/strava.yml: {yearly_miles} yearly miles, {monthly_miles} monthly miles, {recent_miles} recent miles")
+    # Upsert today's daily snapshot only if API succeeded
+    if api_success:
+        found = False
+        for entry in daily_snapshots:
+            if entry["date"] == today_str:
+                entry["ytd_miles"] = yearly_miles
+                found = True
+                break
+        if not found:
+            daily_snapshots.append({"date": today_str, "ytd_miles": yearly_miles})
+    # Cap to 90 most recent
+    daily_snapshots = daily_snapshots[-90:]
+
+    # Compute weekly history from snapshots
+    weekly_history = compute_weekly_history(daily_snapshots)
+
+    write_strava_yml(yearly_miles, recent_miles, year, month_name, last_updated, daily_snapshots, weekly_history)
+    print(f"Wrote _data/strava.yml: {yearly_miles} yearly miles, {recent_miles} recent miles, {len(weekly_history)} weekly buckets")
 
 
 if __name__ == "__main__":

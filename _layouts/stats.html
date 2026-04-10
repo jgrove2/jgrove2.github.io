@@ -27,43 +27,21 @@ layout: default
       <div class="strava-stat-label">Miles in {{ site.data.strava.year }}</div>
     </div>
     <div class="strava-stat-card">
-      <div class="strava-stat-value">{{ site.data.strava.monthly_miles }}</div>
-      <div class="strava-stat-label">Miles in {{ site.data.strava.month }}</div>
-    </div>
-    <div class="strava-stat-card">
       <div class="strava-stat-value">{{ site.data.strava.recent_miles }}</div>
       <div class="strava-stat-label">Miles — Last 4 Wks</div>
     </div>
   </div>
 
-  {% assign history_size = site.data.strava.history | size %}
-  {% if history_size >= 8 %}
+  {% assign weekly_size = site.data.strava.weekly_history | size %}
+  {% if weekly_size >= 1 %}
   <div class="strava-chart-container">
     <canvas id="weeklyMilesChart" height="120"></canvas>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script>
   (function() {
-    // history array from Jekyll, oldest-first
-    var history = [
-      {% for entry in site.data.strava.history %}
-      { date: "{{ entry.date }}", miles: {{ entry.rolling_28d_miles }} }{% unless forloop.last %},{% endunless %}
-      {% endfor %}
-    ];
-
-    // Derive per-week miles: for each entry at index i >= 7,
-    // weekly = history[i].miles - history[i-7].miles (clamped to 0)
-    var labels = [];
-    var data = [];
-    for (var i = 7; i < history.length; i++) {
-      var curr = history[i].miles;
-      var prev = history[i - 7].miles;
-      if (curr == null || prev == null || isNaN(curr) || isNaN(prev)) continue;
-      var diff = curr - prev;
-      if (diff < 0) diff = 0;
-      labels.push(history[i].date.slice(5)); // "MM-DD"
-      data.push(Math.round(diff * 10) / 10);
-    }
+    var labels = [{% for entry in site.data.strava.weekly_history %}"{{ entry.week_start | slice: 5, 5 }}"{% unless forloop.last %},{% endunless %}{% endfor %}];
+    var data   = [{% for entry in site.data.strava.weekly_history %}{{ entry.miles }}{% unless forloop.last %},{% endunless %}{% endfor %}];
 
     var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     var gridColor   = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
@@ -79,7 +57,8 @@ layout: default
           label: 'Miles',
           data: data,
           borderColor: '#fc4c02',
-          backgroundColor: 'transparent',
+          backgroundColor: isDark ? 'rgba(252,76,2,0.12)' : 'rgba(252,76,2,0.15)',
+          fill: true,
           borderWidth: 2,
           pointBackgroundColor: '#fc4c02',
           pointRadius: 3,
