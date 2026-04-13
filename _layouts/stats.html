@@ -32,35 +32,106 @@ layout: default
     </div>
   </div>
 
+  <div class="strava-week-label" id="stravaWeekLabel"></div>
   <div class="strava-chart-container">
     <canvas id="weeklyMilesChart" height="120"></canvas>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script>
   (function() {
-    var labels = [{% for entry in site.data.strava.weekly_history %}"{{ entry.week_start | slice: 5, 5 }}"{% unless forloop.last %},{% endunless %}{% endfor %}];
-    var data   = [{% for entry in site.data.strava.weekly_history %}{{ entry.miles }}{% unless forloop.last %},{% endunless %}{% endfor %}];
+    var rawLabels = [{% for entry in site.data.strava.weekly_history %}"{{ entry.week_start }}"{% unless forloop.last %},{% endunless %}{% endfor %}];
+    var data      = [{% for entry in site.data.strava.weekly_history %}{{ entry.miles }}{% unless forloop.last %},{% endunless %}{% endfor %}];
 
-    var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    var gridColor   = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+    // --- Week label above chart ---
+    (function() {
+      var last = rawLabels[rawLabels.length - 1];
+      if (!last) return;
+      var parts = last.split('-');
+      var monday = new Date(Date.UTC(+parts[0], +parts[1] - 1, +parts[2]));
+      var sunday = new Date(monday); sunday.setUTCDate(sunday.getUTCDate() + 6);
+      var now = new Date();
+      var dow = now.getUTCDay(); // 0=Sun..6=Sat
+      var daysBack = dow === 0 ? 6 : dow - 1;
+      var thisMonday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - daysBack));
+      var isCurrentWeek = monday.getTime() === thisMonday.getTime();
+      var el = document.getElementById('stravaWeekLabel');
+      if (!el) return;
+      if (isCurrentWeek) {
+        el.textContent = 'This week';
+      } else {
+        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        var mStart = months[monday.getUTCMonth()];
+        var mEnd   = months[sunday.getUTCMonth()];
+        var dStart = monday.getUTCDate();
+        var dEnd   = sunday.getUTCDate();
+        el.textContent = mStart === mEnd
+          ? mStart + ' ' + dStart + ' \u2013 ' + dEnd
+          : mStart + ' ' + dStart + ' \u2013 ' + mEnd + ' ' + dEnd;
+      }
+    })();
+
+    // --- Chart.js config ---
+    var isDark      = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var bgColor     = isDark ? '#0d1117' : '#ffffff';
+    var gridColor   = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
     var labelColor  = isDark ? '#8b949e' : '#828282';
     var tooltipBg   = isDark ? '#161b22' : '#ffffff';
     var tooltipText = isDark ? '#c9d1d9' : '#333333';
+    var fillColor   = isDark ? 'rgba(252,76,2,0.08)' : 'rgba(252,76,2,0.10)';
+
+    // Point styles: hollow for all, solid for last
+    var n = data.length;
+    var ptBgColors = data.map(function(_, i) { return i === n - 1 ? '#fc4c02' : bgColor; });
+    var ptRadii    = data.map(function(_, i) { return i === n - 1 ? 5 : 4; });
+
+    // X-axis: show month name only when month changes
+    var xLabels = rawLabels.map(function(d) { return d.slice(0, 7); }); // "YYYY-MM"
+    var prevMonth = null;
+    var tickLabels = xLabels.map(function(ym) {
+      var mo = ym.slice(5); // "MM"
+      var months = ['','JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+      if (mo !== prevMonth) { prevMonth = mo; return months[+mo]; }
+      return '';
+    });
+
+    // Vertical drop line plugin for the last point
+    var dropLinePlugin = {
+      id: 'dropLine',
+      afterDraw: function(chart) {
+        var ds = chart.data.datasets[0];
+        var meta = chart.getDatasetMeta(0);
+        if (!meta.data.length) return;
+        var lastPt = meta.data[meta.data.length - 1];
+        var ctx2 = chart.ctx;
+        var bottom = chart.scales.y.bottom;
+        ctx2.save();
+        ctx2.beginPath();
+        ctx2.moveTo(lastPt.x, lastPt.y + 5);
+        ctx2.lineTo(lastPt.x, bottom);
+        ctx2.strokeStyle = '#fc4c02';
+        ctx2.lineWidth = 2;
+        ctx2.stroke();
+        ctx2.restore();
+      }
+    };
 
     new Chart(document.getElementById('weeklyMilesChart'), {
       type: 'line',
+      plugins: [dropLinePlugin],
       data: {
-        labels: labels,
+        labels: tickLabels,
         datasets: [{
           label: 'Miles',
           data: data,
           borderColor: '#fc4c02',
-          backgroundColor: isDark ? 'rgba(252,76,2,0.12)' : 'rgba(252,76,2,0.15)',
+          backgroundColor: fillColor,
           fill: true,
           borderWidth: 2,
-          pointBackgroundColor: '#fc4c02',
-          pointRadius: 3,
-          pointHoverRadius: 5,
+          pointBackgroundColor: ptBgColors,
+          pointBorderColor: '#fc4c02',
+          pointBorderWidth: 2,
+          pointRadius: ptRadii,
+          pointHoverRadius: 6,
           tension: 0.3,
         }]
       },
@@ -76,6 +147,7 @@ layout: default
             borderColor: isDark ? '#30363d' : '#e0e0e0',
             borderWidth: 1,
             callbacks: {
+              title: function() { return ''; },
               label: function(ctx) { return ctx.parsed.y + ' mi'; }
             }
           }
@@ -87,7 +159,7 @@ layout: default
           },
           y: {
             beginAtZero: true,
-            grid: { color: gridColor },
+            grid: { display: false },
             ticks: {
               color: labelColor,
               font: { size: 11 },
