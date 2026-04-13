@@ -42,33 +42,35 @@ layout: default
     var rawLabels = [{% for entry in site.data.strava.weekly_history %}"{{ entry.week_start }}"{% unless forloop.last %},{% endunless %}{% endfor %}];
     var data      = [{% for entry in site.data.strava.weekly_history %}{{ entry.miles }}{% unless forloop.last %},{% endunless %}{% endfor %}];
 
-    // --- Week label above chart ---
-    (function() {
-      var last = rawLabels[rawLabels.length - 1];
-      if (!last) return;
-      var parts = last.split('-');
+    // --- Week label helpers ---
+    var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var now = new Date();
+    var dow = now.getUTCDay();
+    var daysBack = dow === 0 ? 6 : dow - 1;
+    var thisMonday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - daysBack));
+
+    function formatWeekLabel(weekStart) {
+      if (!weekStart) return '';
+      var parts = weekStart.split('-');
       var monday = new Date(Date.UTC(+parts[0], +parts[1] - 1, +parts[2]));
       var sunday = new Date(monday); sunday.setUTCDate(sunday.getUTCDate() + 6);
-      var now = new Date();
-      var dow = now.getUTCDay(); // 0=Sun..6=Sat
-      var daysBack = dow === 0 ? 6 : dow - 1;
-      var thisMonday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - daysBack));
-      var isCurrentWeek = monday.getTime() === thisMonday.getTime();
+      if (monday.getTime() === thisMonday.getTime()) return 'This week';
+      var mStart = MONTHS[monday.getUTCMonth()];
+      var mEnd   = MONTHS[sunday.getUTCMonth()];
+      var dStart = monday.getUTCDate();
+      var dEnd   = sunday.getUTCDate();
+      return mStart === mEnd
+        ? mStart + ' ' + dStart + ' \u2013 ' + dEnd
+        : mStart + ' ' + dStart + ' \u2013 ' + mEnd + ' ' + dEnd;
+    }
+
+    function setWeekLabel(weekStart) {
       var el = document.getElementById('stravaWeekLabel');
-      if (!el) return;
-      if (isCurrentWeek) {
-        el.textContent = 'This week';
-      } else {
-        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        var mStart = months[monday.getUTCMonth()];
-        var mEnd   = months[sunday.getUTCMonth()];
-        var dStart = monday.getUTCDate();
-        var dEnd   = sunday.getUTCDate();
-        el.textContent = mStart === mEnd
-          ? mStart + ' ' + dStart + ' \u2013 ' + dEnd
-          : mStart + ' ' + dStart + ' \u2013 ' + mEnd + ' ' + dEnd;
-      }
-    })();
+      if (el) el.textContent = formatWeekLabel(weekStart);
+    }
+
+    // Set initial label to last (current) week
+    setWeekLabel(rawLabels[rawLabels.length - 1]);
 
     // --- Chart.js config ---
     var isDark      = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -138,6 +140,16 @@ layout: default
       options: {
         responsive: true,
         maintainAspectRatio: true,
+        onHover: function(event, elements) {
+          if (elements && elements.length > 0) {
+            setWeekLabel(rawLabels[elements[0].index]);
+          }
+        },
+        onClick: function(event, elements) {
+          if (elements && elements.length > 0) {
+            setWeekLabel(rawLabels[elements[0].index]);
+          }
+        },
         plugins: {
           legend: { display: false },
           tooltip: {
@@ -168,6 +180,11 @@ layout: default
           }
         }
       }
+    });
+
+    // Reset label to current week when cursor leaves chart
+    document.getElementById('weeklyMilesChart').addEventListener('mouseleave', function() {
+      setWeekLabel(rawLabels[rawLabels.length - 1]);
     });
   })();
   </script>
