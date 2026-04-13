@@ -180,11 +180,8 @@ def compute_weekly_history(daily_snapshots, num_weeks=13):
                 start_ytd = snapshot_by_date[candidate]
                 break
         if start_ytd is None:
-            # New year boundary: if day before monday is prior year, start at 0.0
-            if monday.year != day_before_monday.year:
-                start_ytd = 0.0
-            else:
-                continue
+            # No snapshot before this week — treat as start of history (or new year boundary)
+            start_ytd = 0.0
 
         week_miles = round(max(end_ytd - start_ytd, 0.0), 1)
         weekly.append({"week_start": monday.strftime("%Y-%m-%d"), "miles": week_miles})
