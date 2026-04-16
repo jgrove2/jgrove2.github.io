@@ -4,9 +4,3 @@
   tags:
     - Jekyll
     - GitHub Pages
-
-- name: Placeholder Project
-  description: Add your highlighted projects here by editing _data/projects.yml.
-  url:
-  tags:
-    - Example
