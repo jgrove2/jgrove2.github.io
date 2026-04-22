@@ -2,7 +2,7 @@ yearly_miles: 113.6
 recent_miles: 65.9
 year: 2026
 month: April
-last_updated: "2026-04-21T05:45:55Z"
+last_updated: "2026-04-22T05:45:27Z"
 daily_snapshots:
   - date: "2026-04-10"
     ytd_miles: 82.2
@@ -25,6 +25,8 @@ daily_snapshots:
   - date: "2026-04-20"
     ytd_miles: 113.6
   - date: "2026-04-21"
+    ytd_miles: 113.6
+  - date: "2026-04-22"
     ytd_miles: 113.6
 weekly_history:
   - week_start: "2026-01-26"
