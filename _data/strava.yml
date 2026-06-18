@@ -1,8 +1,8 @@
-yearly_miles: 215.1
-recent_miles: 54.0
+yearly_miles: 221.2
+recent_miles: 60.0
 year: 2026
 month: June
-last_updated: "2026-06-17T06:45:21Z"
+last_updated: "2026-06-18T06:36:47Z"
 daily_snapshots:
   - date: "2026-04-10"
     ytd_miles: 82.2
@@ -136,6 +136,8 @@ daily_snapshots:
     ytd_miles: 209.1
   - date: "2026-06-17"
     ytd_miles: 215.1
+  - date: "2026-06-18"
+    ytd_miles: 221.2
 weekly_history:
   - week_start: "2026-03-23"
     miles: 0.0
@@ -162,4 +164,4 @@ weekly_history:
   - week_start: "2026-06-08"
     miles: 13.9
   - week_start: "2026-06-15"
-    miles: 14.3
+    miles: 20.4
