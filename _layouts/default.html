@@ -4,20 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% if page.title %}{{ page.title }} - {{ site.title }}{% else %}{{ site.title }}{% endif %}</title>
-  <style>
-    body{margin:40px auto;max-width:650px;line-height:1.6;font-size:18px;color:#444;padding:0 10px}
-    h1,h2,h3{line-height:1.2}
-    .site-header{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #ddd;padding-bottom:.5em;margin-bottom:.5em}
-    .site-header a{color:inherit;text-decoration:none}
-    .site-nav a{margin-left:1em}
-    .brand{font-weight:bold}
-    .breadcrumb{margin-bottom:2em;font-size:small}
-    .breadcrumb a{color:inherit}
-    .center{text-align:center}
-    .center p{margin:0.5em 0}
-    .post-item{margin-bottom:1.5em;padding-bottom:1.5em;border-bottom:1px solid #ddd}
-    .post-item:last-child{border-bottom:0}
-  </style>
+  <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
 </head>
 <body>
   <header class="site-header">
