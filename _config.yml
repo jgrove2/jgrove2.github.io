@@ -1,0 +1,5 @@
+title: Justin Grove
+url: https://jgrove.dev
+baseurl: ""
+permalink: /posts/:title/
+markdown: kramdown

@@ -1,0 +1,40 @@
+---
+layout: default
+title: Posts
+---
+<h1>Posts</h1>
+<p>
+  <label for="sort-select">Sort:</label>
+  <select id="sort-select">
+    <option value="date-desc">Newest first</option>
+    <option value="date-asc">Oldest first</option>
+    <option value="alpha-asc">A&ndash;Z</option>
+    <option value="alpha-desc">Z&ndash;A</option>
+  </select>
+</p>
+<div id="post-list">
+  {% for post in site.posts %}
+    <article class="post-item" data-title="{{ post.title | downcase }}" data-date="{{ post.date | date: '%Y-%m-%d' }}">
+      <h2><a href="{{ post.url | relative_url }}">{{ post.title }}</a></h2>
+      <p><small>{{ post.date | date: "%B %-d, %Y" }}</small></p>
+      {{ post.excerpt }}
+      <p><a href="{{ post.url | relative_url }}">Read more &rarr;</a></p>
+    </article>
+  {% endfor %}
+</div>
+<script>
+  var list = document.getElementById('post-list');
+  var sel = document.getElementById('sort-select');
+  function sortPosts() {
+    var v = sel.value;
+    var items = Array.prototype.slice.call(list.querySelectorAll('.post-item'));
+    items.sort(function (a, b) {
+      if (v === 'alpha-asc') return a.dataset.title.localeCompare(b.dataset.title);
+      if (v === 'alpha-desc') return b.dataset.title.localeCompare(a.dataset.title);
+      if (v === 'date-asc') return a.dataset.date.localeCompare(b.dataset.date);
+      return b.dataset.date.localeCompare(a.dataset.date);
+    });
+    items.forEach(function (el) { list.appendChild(el); });
+  }
+  sel.addEventListener('change', sortPosts);
+</script>
