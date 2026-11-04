@@ -47,11 +47,6 @@ a {
   margin-bottom: .5em;
 }
 
-.site-header a {
-  color: inherit;
-  text-decoration: none;
-}
-
 .header-right {
   display: flex;
   align-items: center;
@@ -99,10 +94,6 @@ a {
 .breadcrumb {
   margin-bottom: 2em;
   font-size: small;
-}
-
-.breadcrumb a {
-  color: inherit;
 }
 
 .center {

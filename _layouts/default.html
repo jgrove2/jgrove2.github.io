@@ -39,11 +39,11 @@
   </script>
   <nav class="breadcrumb">
     {% if page.layout == "post" %}
-      <a href="{{ site.baseurl }}/">home</a> / <a href="{{ site.baseurl }}/posts/">posts</a> / {{ page.title }}
+      <a href="{{ site.baseurl }}/">home</a> / <a href="{{ site.baseurl }}/posts/">posts</a> / <a href="{{ page.url | relative_url }}">{{ page.title }}</a>
     {% elsif page.url == "/posts/" %}
-      <a href="{{ site.baseurl }}/">home</a> / posts
+      <a href="{{ site.baseurl }}/">home</a> / <a href="{{ site.baseurl }}/posts/">posts</a>
     {% else %}
-      home
+      <a href="{{ site.baseurl }}/">home</a>
     {% endif %}
   </nav>
   {{ content }}
