@@ -2,6 +2,7 @@
   --bg: #ffffff;
   --text: #454545;
   --link: #07a;
+  --link-visited: #941352;
   --border: #ddd;
   --quote: #456;
   --quote-mark: #666;
@@ -11,6 +12,7 @@
   --bg: #000000;
   --text: #d9d9d9;
   --link: #00a2e7;
+  --link-visited: #ca1a70;
   --border: #333;
   --quote: #d3c9be;
   --quote-mark: #b8b8b8;
@@ -36,6 +38,10 @@ h1, h2, h3 {
 
 a {
   color: var(--link);
+}
+
+a:visited {
+  color: var(--link-visited);
 }
 
 .site-header {
@@ -115,6 +121,10 @@ a {
   display: inline-flex;
   align-items: center;
   color: var(--link);
+}
+
+.social-links a:visited {
+  color: var(--link-visited);
 }
 
 .social-links svg {
